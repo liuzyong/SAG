@@ -100,19 +100,35 @@ def test_embedding_dimensions_env_passes_through(monkeypatch):
     assert Settings(_env_file=None).embedding_dimensions == 4096
 
 
+@pytest.mark.parametrize("request_dimensions", [None, 1024])
+def test_embedding_send_dimensions_env_disables_request_only(monkeypatch, request_dimensions):
+    monkeypatch.setenv("SAG_EMBEDDING_SEND_DIMENSIONS", "false")
+    configured = Settings(
+        _env_file=None,
+        embedding_schema_dimensions=2560,
+        embedding_request_dimensions=request_dimensions,
+    )
+    embedding = build_engine_config(configured).embedding
+    assert embedding.schema_dimensions == 2560
+    assert embedding.request_dimensions is None
+
+
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
-    ("base_url", "model", "configured_dimensions", "expected_request_dimensions"),
+    ("base_url", "model", "configured_dimensions", "send_dimensions", "expected_request_dimensions"),
     [
-        ("https://api.siliconflow.cn/v1", "BAAI/bge-m3", None, None),
-        ("https://api.openai.com/v1", "text-embedding-3-large", None, 1024),
-        ("https://api.siliconflow.cn/v1", "BAAI/bge-m3", 1024, 1024),
+        ("https://api.siliconflow.cn/v1", "BAAI/bge-m3", None, True, None),
+        ("https://api.openai.com/v1", "text-embedding-3-large", None, True, 1024),
+        ("https://api.siliconflow.cn/v1", "BAAI/bge-m3", 1024, True, 1024),
+        ("http://embedding.invalid/v1", "qwen3-embedding-4b", 2560, False, None),
+        ("http://embedding.invalid/v1", "qwen3-embedding-4b", 2560, True, 2560),
     ],
 )
 async def test_embedding_request_respects_configured_dimensions(
     base_url,
     model,
     configured_dimensions,
+    send_dimensions,
     expected_request_dimensions,
     monkeypatch,
 ):
@@ -123,12 +139,14 @@ async def test_embedding_request_respects_configured_dimensions(
         embedding_base_url=base_url,
         embedding_model=model,
         embedding_dimensions=configured_dimensions,
+        embedding_send_dimensions=send_dimensions,
     )
     # zleap-sag 0.13.0 把「建库维度」与「请求参数」拆成两项，SAG 在配置期直接
     # 表达（见 Settings.effective_embedding_*）：未配置时请求维度跟随 schema，
     # 已知拒绝该参数的服务商/模型组合则省略。旧版是引擎初始化后改写私有属性，
     # 在 0.13.0 上既不可用也不需要。
     config = build_engine_config(settings)
+    assert config.embedding.schema_dimensions == (configured_dimensions or 1024)
     embedding = EmbeddingClient(
         model=config.embedding.model,
         api_key=config.embedding.api_key,

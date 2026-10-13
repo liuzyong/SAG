@@ -222,6 +222,8 @@ class Settings(BaseSettings):
     embedding_dimensions: int | None = None
     embedding_schema_dimensions: int | None = None
     embedding_request_dimensions: int | None = None
+    # 不接受 dimensions 参数的服务可关闭发送，向量库维度与返回向量校验保持生效。
+    embedding_send_dimensions: bool = True
     # Per-engine embedding HTTP concurrency. llama.cpp --parallel 1 cannot
     # absorb the zleap default of 8; queued batches hit the client timeout
     # and the indexer rolls the whole document back.
@@ -434,9 +436,11 @@ class Settings(BaseSettings):
     def effective_embedding_request_dimensions(self) -> int | None:
         """发往 OpenAI-compatible 请求体的 `dimensions` 参数；None 表示不发送。
 
-        未显式配置时跟随 schema 维度，逐字保留 0.12.0 的行为；只有已知拒绝该参数的
-        服务商/模型组合才省略（旧版由 engine_manager 在引擎初始化后绕过）。
+        未显式配置时跟随 schema 维度，逐字保留 0.12.0 的行为；关闭参数发送或使用
+        已知拒绝该参数的服务商/模型组合时省略。
         """
+        if not self.embedding_send_dimensions:
+            return None
         for value in (self.embedding_request_dimensions, self.embedding_dimensions):
             if value is not None:
                 return value

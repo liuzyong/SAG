@@ -22,6 +22,8 @@ os.environ["SAG_ENGINE_WARMUP_COUNT"] = "0"
 os.environ["SAG_LLM_API_KEY"] = ""
 os.environ["SAG_LLM_BASE_URL"] = ""
 os.environ["SAG_EMBEDDING_API_KEY"] = ""
+# 本地服务的兼容配置不得影响默认请求行为测试。
+os.environ["SAG_EMBEDDING_SEND_DIMENSIONS"] = "true"
 os.environ["SAG_MINERU_API_KEY"] = ""
 os.environ["SAG_MINERU_BASE_URL"] = ""
 

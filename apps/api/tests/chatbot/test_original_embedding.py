@@ -153,6 +153,22 @@ async def test_original_embedding_does_not_reuse_saved_responses_key_after_proto
     assert isolate.stock.llm_api_key == "stock-key" and isolate.stock.llm_provider == "responses"
 
 
+async def test_original_embedding_omits_dimensions_when_disabled(client, isolate, embedding_transport):
+    app, client = client
+    app.dependency_overrides[get_current_user] = lambda: object()
+    isolate.stock.embedding_send_dimensions = False
+    response = await client.post(
+        "/api/v1/system/model-config/embedding/test",
+        json={
+            "embedding_model": "qwen3-embedding-4b",
+            "embedding_base_url": "http://embedding.invalid/v1",
+            "embedding_dimensions": 3,
+        },
+    )
+    assert response.json()["ok"]
+    assert "dimensions" not in embedding_transport[0][0][2]
+
+
 async def test_original_embedding_omits_unsupported_request_dimensions(client, isolate, embedding_transport):
     app, client = client
     app.dependency_overrides[get_current_user] = lambda: object()
