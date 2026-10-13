@@ -181,7 +181,7 @@ async def test_extract_receives_contract_limits_and_concurrency():
     assert options.contract == "rich"
     assert options.source_type == "article"
     assert options.limits.min_entities_per_event == 1
-    assert options.limits.max_events_per_chunk == 20
+    assert options.limits.max_events_per_chunk == 30
     assert options.limits.max_entities_per_event == 20
     assert options.execution.max_concurrency == 30
     assert "观点、事实、定义" in options.guidance_rules[0]  # 默认中文知识型事项要求仍然透传

@@ -143,7 +143,7 @@ class IncrementalDocumentProcessor:
         source_config_id: str,
         *,
         max_concurrency: int,
-        chunk_max_tokens: int = 1_000,
+        chunk_max_tokens: int = 512,
         chunk_mode: str = "standard",
         document_title: str | None = None,
         max_entities_per_event: int = 20,
@@ -313,7 +313,7 @@ class IncrementalDocumentProcessor:
             source_type="article",
             contract="rich",
             limits=ExtractionLimits(
-                max_events_per_chunk=20,
+                max_events_per_chunk=30,
                 min_entities_per_event=1,
                 max_entities_per_event=self._max_entities_per_event,
             ),
